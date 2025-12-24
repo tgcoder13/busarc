@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --background: #050505;
+    --foreground: #ededed;
+    /* Gold-500 as primary reference if needed in CSS variables */
+    --primary: #d4af37;
+    --card: rgba(18, 18, 20, 0.6);
+    --input: rgba(255, 255, 255, 0.03);
+}
+
+body {
+    color: var(--foreground);
+    background-color: var(--background);
+    /* Premium Dark Gradient Background */
+    background-image:
+        radial-gradient(circle at 15% 50%, rgba(212, 175, 55, 0.08), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(76, 29, 149, 0.15), transparent 25%);
+    font-family: var(--font-inter), sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Noise Texture Overlay */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.4;
+}
+
+@layer utilities {
+    .glass-panel {
+        @apply bg-[var(--card)] border border-white/5 backdrop-blur-3xl shadow-glass;
+    }
+
+    .input-field {
+        @apply bg-[var(--input)] border border-white/10 text-[var(--foreground)] transition-all duration-300 backdrop-blur-md;
+    }
+
+    .input-field:focus {
+        @apply border-gold-500 bg-white/5 shadow-[0_0_0_1px_#d4af37] outline-none;
+    }
+
+    .btn-primary {
+        @apply bg-gradient-to-br from-gold-400 to-gold-600 text-black font-bold uppercase tracking-wider relative overflow-hidden transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-gold;
+    }
+}
