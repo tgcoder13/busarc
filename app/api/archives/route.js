@@ -6,8 +6,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const catalogStore = getStore("catalog");
-        const catalog = await catalogStore.get("index", { type: "json" }) || [];
+        let catalog = [];
+        try {
+            const catalogStore = getStore("catalog");
+            catalog = await catalogStore.get("index", { type: "json" }) || [];
+        } catch (storeError) {
+            console.warn("Netlify Store not available for catalog, returning empty list.");
+        }
 
         return NextResponse.json(catalog);
     } catch (error) {

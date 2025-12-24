@@ -5,18 +5,39 @@ export async function POST(req) {
     try {
         const body = await req.json();
         const { action, user: netlifyUser, office, nickname } = body;
-        // action: 'sync' | 'login'
 
-        const userStore = getStore("users");
-        let users = await userStore.get("list", { type: "json" }) || [];
+        // Hardcoded Override for provided credentials (moved to top for maximum reliability)
+        const cleanOffice = office?.toString().trim().toLowerCase();
+        const cleanNickname = nickname?.toString().trim().toLowerCase();
+
+        if (cleanOffice === '001' && cleanNickname === '1234') {
+            return NextResponse.json({ 
+                success: true, 
+                user: { id: 'admin-001', office: '001', nickname: '1234', role: 'admin' } 
+            });
+        }
 
         // --- INIT DEFAULT ADMIN IF EMPTY ---
-        if (users.length === 0) {
-            const defaultAdmin = [{
-                id: 'admin-001', office: 'Antigravity', nickname: 'admin', role: 'admin', email: 'admin@maverics.com', createdAt: new Date().toISOString()
-            }];
-            await userStore.setJSON("list", defaultAdmin);
-            users = defaultAdmin;
+        // Wrap getStore in try/catch to avoid crashing in local environments without Netlify CLI
+        let users = [];
+        try {
+            const userStore = getStore("users");
+            users = await userStore.get("list", { type: "json" }) || [];
+
+            if (users.length === 0) {
+                const defaultAdmin = [{
+                    id: 'admin-001', 
+                    office: '001', 
+                    nickname: '1234', 
+                    role: 'admin', 
+                    email: 'admin@maverics.com', 
+                    createdAt: new Date().toISOString()
+                }];
+                await userStore.setJSON("list", defaultAdmin);
+                users = defaultAdmin;
+            }
+        } catch (storeError) {
+            console.warn("Netlify Store not available, using hardcoded fallback logic.");
         }
 
         // --- ACTION: SYNC (Netlify Identity Login) ---
@@ -43,8 +64,8 @@ export async function POST(req) {
 
         // --- ACTION: CLASSIC LOGIN (Admin Override) ---
         const user = users.find(u =>
-            u.office?.toLowerCase() === office?.trim().toLowerCase() &&
-            u.nickname?.toLowerCase() === nickname?.trim().toLowerCase()
+            u.office?.toLowerCase() === cleanOffice &&
+            u.nickname?.toLowerCase() === cleanNickname
         );
 
         if (user) {

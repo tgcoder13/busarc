@@ -14,6 +14,16 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  const handleGuestAccess = () => {
+    localStorage.setItem("maverics_user", JSON.stringify({
+      id: "guest",
+      nickname: "Guest",
+      office: "Public",
+      role: "guest"
+    }));
+    router.push("/dashboard");
+  };
+
   // Initialize Netlify Identity Listeners
   useEffect(() => {
     if (window.netlifyIdentity) {
@@ -114,9 +124,16 @@ export default function Home() {
 
                 <button
                   onClick={() => window.netlifyIdentity.open()}
-                  className="btn-primary w-full rounded-lg py-4 text-sm font-bold text-black shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center"
+                  className="btn-primary w-full rounded-lg py-4 text-sm font-bold text-black shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center mb-3"
                 >
                   <User size={18} className="mr-2" /> Login / Sign Up
+                </button>
+
+                <button
+                  onClick={handleGuestAccess}
+                  className="w-full rounded-lg py-3 text-xs font-bold text-gray-400 border border-white/10 hover:border-gold-500/30 hover:text-white transition-all bg-white/5 active:scale-[0.98]"
+                >
+                  Continue as Guest
                 </button>
               </div>
 
