@@ -2,14 +2,15 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Lock, User, RefreshCw, Globe, Shield } from "lucide-react";
+import { signIn, getSession } from "next-auth/react";
+import { Lock, User, RefreshCw, Globe, Shield, Mail } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [formData, setFormData] = useState({
-    office: "",
-    nickname: "",
+    email: "",
+    password: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -24,65 +25,56 @@ export default function Home() {
     router.push("/dashboard");
   };
 
-  // Initialize Netlify Identity Listeners
+  // Check for existing session
   useEffect(() => {
-    if (window.netlifyIdentity) {
-      window.netlifyIdentity.on("init", user => {
-        if (user) {
-          console.log("Found existing user", user);
-        }
-      });
-
-      window.netlifyIdentity.on("login", async user => {
-        console.log("Logged in", user);
-
-        // Sync with our Database
-        try {
-          const res = await fetch('/api/auth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'sync', user })
-          });
-          const data = await res.json();
-
-          if (data.success) {
-            localStorage.setItem("maverics_user", JSON.stringify(data.user));
-            window.netlifyIdentity.close();
-            router.push("/dashboard");
-          }
-        } catch (e) {
-          console.error("Sync failed", e);
-        }
-      });
-    }
+    const checkSession = async () => {
+      const session = await getSession();
+      if (session) {
+        // Sync with localStorage for compatibility with existing dashboard logic
+        localStorage.setItem("maverics_user", JSON.stringify({
+          id: session.user.id,
+          nickname: session.user.nickname || session.user.name,
+          office: session.user.office || "Member",
+          role: session.user.role || "user",
+          email: session.user.email,
+        }));
+        router.push("/dashboard");
+      }
+    };
+    checkSession();
   }, [router]);
 
-  const handleAdminSubmit = async (e) => {
+  const handleEmailLogin = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError("");
 
     try {
-      const res = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+      const result = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
       });
 
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        localStorage.setItem("maverics_user", JSON.stringify(data.user));
-        router.push("/dashboard");
+      if (result?.error) {
+        setError("Invalid credentials.");
       } else {
-        setError(data.error || "Authentication failed.");
-        setIsSubmitting(false);
+        // Session check in useEffect will handle redirect
       }
-
     } catch (err) {
       console.error(err);
       setError("Network error. Please try again.");
+    } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleProviderLogin = async (provider) => {
+    try {
+      await signIn(provider, { callbackUrl: "/dashboard" });
+    } catch (err) {
+      console.error(err);
+      setError("Login failed. Please try again.");
     }
   };
 
@@ -122,28 +114,34 @@ export default function Home() {
                 <h3 className="text-xl font-bold text-white mb-2">Member Access</h3>
                 <p className="text-sm text-gray-400 mb-6">Log in to view archives and access the Study Hub.</p>
 
-                <button
-                  onClick={() => alert("Auth integration coming soon")}
-                  className="btn-primary w-full rounded-lg py-4 text-sm font-bold text-black shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center mb-3"
-                >
-                  <User size={18} className="mr-2" /> Login / Sign Up
-                </button>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => handleProviderLogin("google")}
+                    className="btn-primary w-full rounded-lg py-4 text-sm font-bold text-black shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center"
+                  >
+                    <Globe size={18} className="mr-2" /> Continue with Google
+                  </button>
 
-                <button
-                  onClick={handleGuestAccess}
-                  className="w-full rounded-lg py-3 text-xs font-bold text-gray-400 border border-white/10 hover:border-gold-500/30 hover:text-white transition-all bg-white/5 active:scale-[0.98]"
-                >
-                  Continue as Guest
-                </button>
+                  <button
+                    onClick={() => setShowAdminLogin(true)}
+                    className="w-full rounded-lg py-3 text-xs font-bold text-white border border-white/10 hover:border-gold-500/30 transition-all bg-white/5 active:scale-[0.98] flex items-center justify-center"
+                  >
+                    <Mail size={14} className="mr-2" /> Login with Email
+                  </button>
+
+                  <button
+                    onClick={handleGuestAccess}
+                    className="w-full rounded-lg py-3 text-xs font-bold text-gray-400 border border-white/10 hover:border-gold-500/30 hover:text-white transition-all bg-white/5 active:scale-[0.98]"
+                  >
+                    Continue as Guest
+                  </button>
+                </div>
               </div>
 
               <div className="text-center">
-                <button
-                  onClick={() => setShowAdminLogin(true)}
-                  className="text-xs text-gray-500 hover:text-gold-500 flex items-center justify-center mx-auto transition-colors"
-                >
-                  <Shield size={12} className="mr-1.5" /> System Admin
-                </button>
+                <p className="text-[10px] text-gray-600 uppercase tracking-widest">
+                  Secure OAuth 2.0 Integration
+                </p>
               </div>
             </motion.div>
           ) : (
@@ -155,37 +153,37 @@ export default function Home() {
               className="space-y-6"
             >
               <div className="border-b border-white/10 pb-4 mb-4">
-                <h3 className="text-lg font-bold text-red-400 flex items-center justify-center">
-                  <Shield className="mr-2" size={18} /> Admin Override
+                <h3 className="text-lg font-bold text-gold-500 flex items-center justify-center">
+                  <Mail className="mr-2" size={18} /> Email Login
                 </h3>
               </div>
 
-              <form onSubmit={handleAdminSubmit} className="space-y-6">
+              <form onSubmit={handleEmailLogin} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center">
-                    <User size={14} className="mr-2" /> Office
+                    <User size={14} className="mr-2" /> Email
                   </label>
                   <input
                     required
-                    type="text"
-                    placeholder="e.g. Antigravity"
-                    className="input-field w-full rounded-lg bg-white/5 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                    value={formData.office}
-                    onChange={(e) => setFormData({ ...formData, office: e.target.value })}
+                    type="email"
+                    placeholder="name@example.com"
+                    className="input-field w-full rounded-lg bg-white/5 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gold-500/50"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-xs font-semibold uppercase tracking-wider text-gray-500 flex items-center">
-                    <Lock size={14} className="mr-2" /> Nickname
+                    <Lock size={14} className="mr-2" /> Password
                   </label>
                   <input
                     required
                     type="password"
                     placeholder="••••••••"
-                    className="input-field w-full rounded-lg bg-white/5 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                    value={formData.nickname}
-                    onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
+                    className="input-field w-full rounded-lg bg-white/5 px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gold-500/50"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   />
                 </div>
 
@@ -194,9 +192,9 @@ export default function Home() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full rounded-lg py-4 text-sm font-bold bg-gradient-to-r from-red-900/80 to-red-800/80 hover:from-red-800 hover:to-red-700 text-white shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:grayscale flex justify-center items-center ring-1 ring-red-500/30"
+                  className="btn-primary w-full rounded-lg py-4 text-sm font-bold text-black shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:grayscale flex justify-center items-center"
                 >
-                  {isSubmitting ? <RefreshCw className="animate-spin" /> : "Authenticate Admin"}
+                  {isSubmitting ? <RefreshCw className="animate-spin" /> : "Sign In"}
                 </button>
               </form>
 
