@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import {
     Upload, Link as LinkIcon, FileText, Check, LogOut,
     Copy, ExternalLink, Library, FolderOpen, ArrowLeft, ChevronDown, ChevronRight, RefreshCw,
@@ -52,10 +53,9 @@ export default function Dashboard() {
         } catch (e) { console.error(e); }
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         localStorage.removeItem("maverics_user");
-        if (window.netlifyIdentity) window.netlifyIdentity.logout();
-        router.push("/");
+        await signOut({ callbackUrl: "/" });
     };
 
     // --- VIEW LOGIC ---
@@ -158,11 +158,16 @@ function SidebarItem({ id, icon: Icon, label, active, set }) {
 }
 
 function HomeView({ user, archives, setTab }) {
+    const getStudyUrl = (file) => {
+        // Use the logical path instead of hardcoded netlify domain
+        return `/study?file=${encodeURIComponent(file.link)}&title=${encodeURIComponent(file.title)}`;
+    };
+
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto">
             {/* Welcome Banner */}
             <div className="p-8 rounded-3xl bg-gradient-to-r from-gold-900/40 to-black border border-gold-500/20 mb-8 relative overflow-hidden">
-                <div className="absolute right-0 top-0 h-full w-1/2 bg-[url('/noise.png')] opacity-10"></div>
+                <div className="absolute right-0 top-0 h-full w-1/2 bg-noise opacity-10"></div>
                 <h2 className="text-3xl font-cinzel font-bold text-white mb-2 relative z-10">Welcome back, {user.nickname}</h2>
                 <p className="text-gray-400 relative z-10">Your study streak is on fire! Keep up the momentum.</p>
                 <div className="flex gap-4 mt-6 relative z-10">
@@ -192,7 +197,7 @@ function HomeView({ user, archives, setTab }) {
                                 <p className="text-xs text-gray-500">{file.courseCode} • {file.fileName}</p>
                             </div>
                         </div>
-                        <a href={`/study?file=${encodeURIComponent(`https://archive-dmav.netlify.app/${file.link}`)}&title=${encodeURIComponent(file.title)}`} className="text-xs font-bold text-gold-500 px-3 py-1 bg-gold-500/10 rounded hover:bg-gold-500/20">Resume</a>
+                        <a href={getStudyUrl(file)} className="text-xs font-bold text-gold-500 px-3 py-1 bg-gold-500/10 rounded hover:bg-gold-500/20">Resume</a>
                     </div>
                 ))}
             </div>
@@ -228,6 +233,10 @@ function LibraryView({ archives }) {
         setExpanded(prev => ({ ...prev, [course]: !prev[course] }));
     };
 
+    const getStudyUrl = (file) => {
+        return `/study?file=${encodeURIComponent(file.link)}&title=${encodeURIComponent(file.title)}`;
+    };
+
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <h3 className="text-2xl font-cinzel font-bold text-white mb-6">Course Library</h3>
@@ -247,7 +256,7 @@ function LibraryView({ archives }) {
                             </div>
                             <div className="p-4 space-y-2">
                                 {displayedFiles.map(f => (
-                                    <a key={f.id} href={`/study?file=${encodeURIComponent(`https://archive-dmav.netlify.app/${f.link}`)}&title=${encodeURIComponent(f.title)}`} className="block text-sm text-gray-400 hover:text-white truncate py-1 border-b border-white/5 last:border-0 pl-2 border-l-2 border-transparent hover:border-l-gold-500 transition-all">
+                                    <a key={f.id} href={getStudyUrl(f)} className="block text-sm text-gray-400 hover:text-white truncate py-1 border-b border-white/5 last:border-0 pl-2 border-l-2 border-transparent hover:border-l-gold-500 transition-all">
                                         {f.title}
                                     </a>
                                 ))}
@@ -289,12 +298,16 @@ function TakeTestView({ archives }) {
     const handleGrandTest = (course) => {
         // Collect URLs from top 5 recent files in this course
         const files = grouped[course].slice(0, 5); // Take top 5
-        const fileUrls = files.map(f => `https://archive-dmav.netlify.app/${f.link}`).join(',');
+        const fileUrls = files.map(f => f.link).join(','); // Use relative links
         const titles = files.map(f => f.title).join(',');
 
         // Encode and Redirect
         const url = `/study?mode=grand_test&course=${course}&urls=${encodeURIComponent(fileUrls)}&titles=${encodeURIComponent(titles)}`;
         window.location.href = url;
+    };
+
+    const getStudyUrl = (file) => {
+        return `/study?file=${encodeURIComponent(file.link)}&title=${encodeURIComponent(file.title)}`;
     };
 
     return (
@@ -367,7 +380,7 @@ function TakeTestView({ archives }) {
                                 {grouped[selectedCourse].map(file => (
                                     <a
                                         key={file.id}
-                                        href={`/study?file=${encodeURIComponent(`https://archive-dmav.netlify.app/${file.link}`)}&title=${encodeURIComponent(file.title)}`}
+                                        href={`/study?file=${encodeURIComponent(file.link)}&title=${encodeURIComponent(file.title)}`}
                                         className="flex items-center justify-between p-4 hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors group"
                                     >
                                         <div>
