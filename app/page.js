@@ -123,7 +123,7 @@ export default function Home() {
                 <p className="text-sm text-gray-400 mb-6">Log in to view archives and access the Study Hub.</p>
 
                 <button
-                  onClick={() => window.netlifyIdentity.open()}
+                  onClick={() => alert("Auth integration coming soon")}
                   className="btn-primary w-full rounded-lg py-4 text-sm font-bold text-black shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center mb-3"
                 >
                   <User size={18} className="mr-2" /> Login / Sign Up
@@ -214,7 +214,7 @@ export default function Home() {
 
         <div className="mt-8 text-center text-gray-600">
           <p className="text-[10px] mb-3">
-            SECURE CLASSIFICATION SERVER • NETLIFY IDENTITY
+            SECURE CLASSIFICATION SERVER • VERCEL DEPLOYMENT
           </p>
           <div className="flex justify-center space-x-4 text-[9px] uppercase tracking-widest">
             <a href="/privacy" className="hover:text-gold-500 transition-colors">Privacy Policy</a>
