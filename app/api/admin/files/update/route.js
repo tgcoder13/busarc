@@ -1,26 +1,25 @@
-import { getStore } from "@netlify/blobs";
+import { getJson, setJson } from "@/lib/googleDrive";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
     try {
         const { id, courseCode, topicNumber, title } = await req.json();
-        const archiveStore = getStore("archives");
 
-        let archives = await archiveStore.get("list", { type: "json" }) || [];
-        const index = archives.findIndex(f => f.id === id);
+        let catalog = await getJson("catalog.json") || [];
+        const index = catalog.findIndex(f => f.id === id);
 
         if (index !== -1) {
             // Update fields
-            archives[index].courseCode = courseCode;
-            archives[index].topicNumber = topicNumber;
-            archives[index].title = title;
+            catalog[index].courseCode = courseCode;
+            catalog[index].topicNumber = topicNumber;
+            catalog[index].title = title;
 
-            await archiveStore.setJSON("list", archives);
+            await setJson("catalog.json", catalog);
             return NextResponse.json({ success: true });
         }
 
         return NextResponse.json({ error: "File not found" }, { status: 404 });
     } catch (e) {
-        return NextResponse.json({ error: "Update failed" }, { status: 500 });
+        return NextResponse.json({ error: "Update failed: " + e.message }, { status: 500 });
     }
 }

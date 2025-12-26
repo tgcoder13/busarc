@@ -1,33 +1,37 @@
-import { getStore } from "@netlify/blobs";
-import { NextResponse } from "next/server";
+import { getJson, getDriveClient } from "@/lib/googleDrive";
 
 export async function GET(req, { params }) {
     const { course, slug } = await params;
     const fileSlug = slug.join('/');
-    const key = `${course}/${fileSlug}`;
+    const logicalPath = `${course}/${fileSlug}`;
 
     try {
-        const fileStore = getStore("files");
+        // 1. Find file ID from catalog
+        const catalog = await getJson("catalog.json") || [];
+        const fileEntry = catalog.find(f => f.logicalPath === logicalPath);
 
-        // Try getting metadata first to check existence
-        const metadata = await fileStore.getMetadata(key);
-
-        if (!metadata) {
+        if (!fileEntry || !fileEntry.link) {
             return new Response("File Not Found", { status: 404 });
         }
 
-        // Retrieve as stream for efficient delivery
-        const stream = await fileStore.get(key, { type: "stream" });
+        const fileId = fileEntry.link;
 
-        return new Response(stream, {
+        // 2. Get stream from Google Drive
+        const drive = await getDriveClient();
+        const response = await drive.files.get(
+            { fileId: fileId, alt: 'media' },
+            { responseType: 'stream' }
+        );
+
+        return new Response(response.data, {
             headers: {
-                'Content-Type': metadata.mimeType || 'application/pdf',
-                'Content-Disposition': `inline; filename="${metadata.originalName || 'document.pdf'}"`
+                'Content-Type': fileEntry.mimeType || 'application/pdf',
+                'Content-Disposition': `inline; filename="${fileEntry.fileName || 'document.pdf'}"`
             }
         });
 
     } catch (error) {
         console.error("File serve error:", error);
-        return new Response("Server Error", { status: 500 });
+        return new Response("Server Error: " + error.message, { status: 500 });
     }
 }

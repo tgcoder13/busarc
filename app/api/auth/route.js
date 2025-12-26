@@ -1,4 +1,4 @@
-import { getStore } from "@netlify/blobs";
+import { getJson, setJson } from "@/lib/googleDrive";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
@@ -6,38 +6,36 @@ export async function POST(req) {
         const body = await req.json();
         const { action, user: netlifyUser, office, nickname } = body;
 
-        // Hardcoded Override for provided credentials (moved to top for maximum reliability)
+        // Hardcoded Override for provided credentials
         const cleanOffice = office?.toString().trim().toLowerCase();
         const cleanNickname = nickname?.toString().trim().toLowerCase();
 
         if (cleanOffice === '001' && cleanNickname === '1234') {
-            return NextResponse.json({ 
-                success: true, 
-                user: { id: 'admin-001', office: '001', nickname: '1234', role: 'admin' } 
+            return NextResponse.json({
+                success: true,
+                user: { id: 'admin-001', office: '001', nickname: '1234', role: 'admin' }
             });
         }
 
         // --- INIT DEFAULT ADMIN IF EMPTY ---
-        // Wrap getStore in try/catch to avoid crashing in local environments without Netlify CLI
         let users = [];
         try {
-            const userStore = getStore("users");
-            users = await userStore.get("list", { type: "json" }) || [];
+            users = await getJson("users.json") || [];
 
             if (users.length === 0) {
                 const defaultAdmin = [{
-                    id: 'admin-001', 
-                    office: '001', 
-                    nickname: '1234', 
-                    role: 'admin', 
-                    email: 'admin@maverics.com', 
+                    id: 'admin-001',
+                    office: '001',
+                    nickname: '1234',
+                    role: 'admin',
+                    email: 'admin@maverics.com',
                     createdAt: new Date().toISOString()
                 }];
-                await userStore.setJSON("list", defaultAdmin);
+                await setJson("users.json", defaultAdmin);
                 users = defaultAdmin;
             }
         } catch (storeError) {
-            console.warn("Netlify Store not available, using hardcoded fallback logic.");
+            console.warn("Google Drive Store not available or error:", storeError.message);
         }
 
         // --- ACTION: SYNC (Netlify Identity Login) ---
@@ -57,7 +55,7 @@ export async function POST(req) {
                     createdAt: new Date().toISOString()
                 };
                 users.push(newUser);
-                await userStore.setJSON("list", users);
+                await setJson("users.json", users);
                 return NextResponse.json({ success: true, user: newUser });
             }
         }
@@ -76,6 +74,6 @@ export async function POST(req) {
 
     } catch (error) {
         console.error("Auth error:", error);
-        return NextResponse.json({ error: "Authentication failed" }, { status: 500 });
+        return NextResponse.json({ error: "Authentication failed: " + error.message }, { status: 500 });
     }
 }
