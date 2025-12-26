@@ -1,4 +1,4 @@
-import { getJson, setJson } from "@/lib/googleDrive";
+import { getJson, setJson } from "@/lib/storage";
 import { NextResponse } from "next/server";
 
 export async function GET(req) {

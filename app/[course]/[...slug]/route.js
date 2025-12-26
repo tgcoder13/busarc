@@ -1,4 +1,5 @@
-import { getJson, getDriveClient } from "@/lib/googleDrive";
+import { getJson } from "@/lib/storage";
+import { NextResponse } from "next/server";
 
 export async function GET(req, { params }) {
     const { course, slug } = await params;
@@ -6,7 +7,7 @@ export async function GET(req, { params }) {
     const logicalPath = `${course}/${fileSlug}`;
 
     try {
-        // 1. Find file ID from catalog
+        // 1. Find file URL from catalog
         const catalog = await getJson("catalog.json") || [];
         const fileEntry = catalog.find(f => f.logicalPath === logicalPath);
 
@@ -14,21 +15,8 @@ export async function GET(req, { params }) {
             return new Response("File Not Found", { status: 404 });
         }
 
-        const fileId = fileEntry.link;
-
-        // 2. Get stream from Google Drive
-        const drive = await getDriveClient();
-        const response = await drive.files.get(
-            { fileId: fileId, alt: 'media' },
-            { responseType: 'stream' }
-        );
-
-        return new Response(response.data, {
-            headers: {
-                'Content-Type': fileEntry.mimeType || 'application/pdf',
-                'Content-Disposition': `inline; filename="${fileEntry.fileName || 'document.pdf'}"`
-            }
-        });
+        // 2. Redirect to Vercel Blob URL (Direct download/view)
+        return NextResponse.redirect(fileEntry.link);
 
     } catch (error) {
         console.error("File serve error:", error);

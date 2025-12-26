@@ -213,9 +213,14 @@ export default function Home() {
         </AnimatePresence>
 
         <div className="mt-8 text-center text-gray-600">
-          <p className="text-[10px]">
+          <p className="text-[10px] mb-3">
             SECURE CLASSIFICATION SERVER • NETLIFY IDENTITY
           </p>
+          <div className="flex justify-center space-x-4 text-[9px] uppercase tracking-widest">
+            <a href="/privacy" className="hover:text-gold-500 transition-colors">Privacy Policy</a>
+            <span className="text-gray-800">|</span>
+            <a href="/toss" className="hover:text-gold-500 transition-colors">Terms of Service</a>
+          </div>
         </div>
       </motion.div>
     </main>

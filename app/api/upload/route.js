@@ -1,4 +1,4 @@
-import { uploadFile, getJson, setJson } from "@/lib/googleDrive";
+import { uploadFile, getJson, setJson } from "@/lib/storage";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
@@ -17,20 +17,14 @@ export async function POST(req) {
         const topic = sanitize(metadata.topicNumber);
         const titleSlug = sanitize(metadata.title);
 
-        // Name for Google Drive
+        // Name for Vercel Blob
         const fileName = `${course}-${topic}-${titleSlug}-${file.name}`;
 
-        // Upload File (Binary buffer)
+        // Upload File to Vercel Blob
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        const driveFile = await uploadFile(fileName, file.type, buffer, {
-            mimeType: file.type,
-            originalName: file.name,
-            courseCode: metadata.courseCode,
-            topicNumber: metadata.topicNumber,
-            title: metadata.title
-        });
+        const blobUrl = await uploadFile(fileName, buffer, file.type);
 
         // Update Catalog (List of all files)
         const currentCatalog = await getJson("catalog.json") || [];
@@ -42,8 +36,7 @@ export async function POST(req) {
             topicNumber: metadata.topicNumber,
             title: metadata.title,
             logicalPath: `${course}/${topic}-${titleSlug}`, // Logical path for routing
-            link: driveFile.id, // Using Drive ID as the ref
-            webViewLink: driveFile.webViewLink,
+            link: blobUrl, // Using Vercel Blob URL as the ref
             date: new Date().toLocaleDateString()
         };
 

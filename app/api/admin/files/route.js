@@ -1,4 +1,4 @@
-import { getJson, setJson, deleteFile } from "@/lib/googleDrive";
+import { getJson, setJson, deleteFile } from "@/lib/storage";
 import { NextResponse } from "next/server";
 
 export async function DELETE(req) {

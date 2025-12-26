@@ -1,4 +1,4 @@
-import { getJson } from "@/lib/googleDrive";
+import { getJson } from "@/lib/storage";
 import { NextResponse } from "next/server";
 
 // Force dynamic requirement for Netlify function behavior
