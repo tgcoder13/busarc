@@ -45,7 +45,11 @@ export async function POST(req) {
 
         return NextResponse.json({ success: true, link: newEntry.link });
     } catch (error) {
-        console.error("Upload error:", error);
-        return NextResponse.json({ error: "Upload failed: " + error.message }, { status: 500 });
+        console.error("Critical Upload Error:", error);
+        return NextResponse.json({
+            error: "Upload failed",
+            details: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }, { status: 500 });
     }
 }
