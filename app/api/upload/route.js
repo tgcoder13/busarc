@@ -1,76 +1,55 @@
-import { uploadFile, getJson, setJson } from "@/lib/storage";
+import { put, setJson, getJson } from "@/lib/storage";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
     let currentStep = "Initializing";
     try {
-        currentStep = "Parsing FormData";
+        currentStep = "Parsing Form Data";
         const formData = await req.formData();
         const file = formData.get("file");
-        const metadataString = formData.get("metadata");
+        const metadataStr = formData.get("metadata");
 
-        if (!file) {
-            console.warn("[Upload] Missing 'file' in formData");
-            return NextResponse.json({ error: "No file provided" }, { status: 400 });
-        }
-        if (!metadataString) {
-            console.warn("[Upload] Missing 'metadata' in formData");
-            return NextResponse.json({ error: "No metadata provided" }, { status: 400 });
+        if (!file || !metadataStr) {
+            return NextResponse.json({ error: "Missing file or metadata" }, { status: 400 });
         }
 
-        const metadata = JSON.parse(metadataString);
+        const metadata = JSON.parse(metadataStr);
+        const buffer = Buffer.from(await file.arrayBuffer());
 
-        // Clean names for safe keys
-        const sanitize = (str) => str.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '');
-        const course = sanitize(metadata.courseCode.toUpperCase());
-        const topic = sanitize(metadata.topicNumber);
-        const titleSlug = sanitize(metadata.title);
-
-        const fileName = `${course}-${topic}-${titleSlug}-${file.name}`;
-
-        currentStep = "Preparing Buffer";
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
+        // 1. Upload to Blob
         currentStep = "Uploading to Vercel Blob";
-        const blobUrl = await uploadFile(fileName, buffer, file.type);
+        const url = await put(file.name, buffer, {
+            access: 'public',
+            contentType: file.type,
+            addRandomSuffix: true,
+            token: process.env.BLOB_READ_WRITE_TOKEN
+        });
 
-        currentStep = "Retrieving Catalog";
-        let currentCatalog = [];
-        try {
-            currentCatalog = await getJson("catalog.json") || [];
-        } catch (e) {
-            console.error("[Upload] Catalog retrieval specifically failed:", e.message);
-            // We continue as it might be the first file
-        }
+        // 2. Update Catalog
+        currentStep = "Updating Catalog";
+        let catalog = await getJson("catalog.json") || [];
 
-        currentStep = "Updating Catalog Entry";
         const newEntry = {
-            id: Date.now(),
-            fileName: file.name,
-            fileSize: (file.size / 1024 / 1024).toFixed(2),
-            courseCode: metadata.courseCode.toUpperCase(),
+            id: Date.now().toString(),
+            courseCode: metadata.courseCode,
             topicNumber: metadata.topicNumber,
             title: metadata.title,
-            logicalPath: `${course}/${topic}-${titleSlug}`,
-            link: blobUrl,
-            date: new Date().toLocaleDateString()
+            fileName: file.name,
+            link: url.url, // Correctly store the Vercel URL
+            uploadedAt: new Date().toISOString()
         };
 
-        const updatedCatalog = [newEntry, ...currentCatalog];
+        catalog.unshift(newEntry);
+        await setJson("catalog.json", catalog);
 
-        currentStep = "Saving Catalog";
-        await setJson("catalog.json", updatedCatalog);
+        return NextResponse.json({ success: true, link: url.url });
 
-        console.log(`[Upload] Process complete for ${file.name}`);
-        return NextResponse.json({ success: true, link: newEntry.link });
     } catch (error) {
-        console.error(`[Upload] CRITICAL ERROR at step [${currentStep}]:`, error);
+        console.error(`[Upload Error] ${currentStep}:`, error.message);
         return NextResponse.json({
             error: "Upload failed",
             step: currentStep,
-            details: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            details: error.message
         }, { status: 500 });
     }
 }

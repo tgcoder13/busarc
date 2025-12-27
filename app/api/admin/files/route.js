@@ -16,13 +16,12 @@ export async function DELETE(req) {
         const newCatalog = catalog.filter(f => f.id !== id);
         await setJson("catalog.json", newCatalog);
 
-        // 2. Remove from Google Drive
+        // 2. Remove from Vercel Blob
         if (fileEntry.link) {
             try {
                 await deleteFile(fileEntry.link);
             } catch (driveError) {
-                console.error("Failed to delete from Google Drive:", driveError.message);
-                // We proceed since it's removed from catalog
+                console.error("Failed to delete from Vercel Blob:", driveError.message);
             }
         }
 

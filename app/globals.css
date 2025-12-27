@@ -35,7 +35,7 @@ body::before {
 
 @layer utilities {
     .glass-panel {
-        @apply bg-[var(--card)] border border-white/5 backdrop-blur-3xl shadow-[0_8px_32px_0_rgba(0, 0, 0, 0.8)];
+        @apply bg-[var(--card)] border border-white/5 backdrop-blur-3xl shadow-glass-panel;
     }
 
     .input-field {

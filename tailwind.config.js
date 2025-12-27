@@ -23,6 +23,8 @@ module.exports = {
             boxShadow: {
                 glass: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 24px 60px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
                 gold: "0 8px 20px -4px rgba(212, 175, 55, 0.4)",
+                'glass-panel': "0 8px 32px 0 rgba(0, 0, 0, 0.8)",
+                'input-focus': "0 0 0 1px #d4af37",
             },
         },
     },
