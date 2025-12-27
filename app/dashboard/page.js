@@ -115,7 +115,7 @@ export default function Dashboard() {
                         {activeTab === 'library' && <LibraryView key="library" archives={archives} />}
                         {activeTab === 'upload' && <UploadView key="upload" file={file} setFile={setFile} metadata={metadata} setMetadata={setMetadata} uploading={uploading} handleUpload={() => handleUploadLogic(file, metadata, setUploading, setSuccess, setGeneratedLink, fetchArchives)} success={success} generatedLink={generatedLink} />}
                         {activeTab === 'test' && <TakeTestView key="test" archives={archives} />}
-                        {activeTab === 'admin' && <AdminView key="admin" users={adminUsers} archives={archives} subTab={adminSubTab} setSubTab={setAdminSubTab} newUser={adminNewUser} setNewUser={setAdminNewUser} fetchUsers={fetchAdminUsers} fetchFiles={fetchArchives} />}
+                        {activeTab === 'admin' && <AdminView key="admin" users={adminUsers} archives={archives} subTab={activeTab} setSubTab={setActiveTab} newUser={adminNewUser} setNewUser={setAdminNewUser} fetchUsers={fetchAdminUsers} fetchFiles={fetchArchives} />}
                     </AnimatePresence>
                 </main>
             </div>
@@ -162,13 +162,11 @@ function SidebarItem({ id, icon: Icon, label, active, set }) {
 
 function HomeView({ user, archives, setTab }) {
     const getStudyUrl = (file) => {
-        // Use the logical path
         return `/study?file=${encodeURIComponent(file.link)}&title=${encodeURIComponent(file.title)}`;
     };
 
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto">
-            {/* Welcome Banner */}
             <div className="p-8 rounded-3xl bg-gradient-to-r from-gold-900/40 to-black border border-gold-500/20 mb-8 relative overflow-hidden">
                 <div className="absolute right-0 top-0 h-full w-1/2 bg-noise opacity-10"></div>
                 <h2 className="text-3xl font-cinzel font-bold text-white mb-2 relative z-10">Welcome back, {user.nickname}</h2>
@@ -179,14 +177,12 @@ function HomeView({ user, archives, setTab }) {
                 </div>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <StatCard icon={FileText} label="Documents" value={archives.length} color="text-blue-400" />
                 <StatCard icon={Clock} label="Hours Studied" value="12.5" color="text-purple-400" />
                 <StatCard icon={PieChart} label="Avg Test Score" value="88%" color="text-green-400" />
             </div>
 
-            {/* Recent */}
             <h3 className="text-lg font-bold text-white mb-4 flex items-center"><Clock size={16} className="mr-2 text-gold-500" /> Recent Materials</h3>
             <div className="space-y-3">
                 {archives.slice(0, 3).map(file => (
@@ -223,7 +219,6 @@ function StatCard({ icon: Icon, label, value, color }) {
 }
 
 function LibraryView({ archives }) {
-    // Group by Course
     const grouped = archives.reduce((acc, item) => {
         if (!acc[item.courseCode]) acc[item.courseCode] = [];
         acc[item.courseCode].push(item);
@@ -291,7 +286,6 @@ function LibraryView({ archives }) {
 function TakeTestView({ archives }) {
     const [selectedCourse, setSelectedCourse] = useState(null);
 
-    // Group by Course
     const grouped = archives.reduce((acc, item) => {
         if (!acc[item.courseCode]) acc[item.courseCode] = [];
         acc[item.courseCode].push(item);
@@ -299,18 +293,10 @@ function TakeTestView({ archives }) {
     }, {});
 
     const handleGrandTest = (course) => {
-        // Collect URLs from top 5 recent files in this course
-        const files = grouped[course].slice(0, 5); // Take top 5
-        const fileUrls = files.map(f => f.link).join(','); // Use relative links
+        const files = grouped[course].slice(0, 5);
+        const fileUrls = files.map(f => f.link).join(',');
         const titles = files.map(f => f.title).join(',');
-
-        // Encode and Redirect
-        const url = `/study?mode=grand_test&course=${course}&urls=${encodeURIComponent(fileUrls)}&titles=${encodeURIComponent(titles)}`;
-        window.location.href = url;
-    };
-
-    const getStudyUrl = (file) => {
-        return `/study?file=${encodeURIComponent(file.link)}&title=${encodeURIComponent(file.title)}`;
+        window.location.href = `/study?mode=grand_test&course=${course}&urls=${encodeURIComponent(fileUrls)}&titles=${encodeURIComponent(titles)}`;
     };
 
     return (
@@ -326,7 +312,6 @@ function TakeTestView({ archives }) {
             </p>
 
             {!selectedCourse ? (
-                // COURSE SELECTION
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {Object.keys(grouped).map(course => (
                         <button
@@ -343,7 +328,6 @@ function TakeTestView({ archives }) {
                     ))}
                 </div>
             ) : (
-                // TOPIC SELECTION
                 <div className="text-left animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <button
                         onClick={() => setSelectedCourse(null)}
@@ -353,30 +337,21 @@ function TakeTestView({ archives }) {
                     </button>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Grand Test Card */}
                         <div className="md:col-span-1">
                             <div className="h-full bg-gradient-to-b from-gold-900/20 to-black border border-gold-500/30 rounded-2xl p-6 flex flex-col relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gold-500/5 animate-pulse"></div>
                                 <h3 className="text-2xl font-cinzel font-bold text-gold-500 mb-2 relative z-10">Grand Test</h3>
                                 <p className="text-sm text-gray-400 mb-6 relative z-10">
                                     Comprehensive assessment covering all topics in {selectedCourse}.
-                                    <br /><br />
-                                    <span className="text-xs font-mono text-gold-400/80">
-                                        • 40 Multiple Choice<br />
-                                        • 20 Short Answer<br />
-                                        • 10 Theory
-                                    </span>
                                 </p>
                                 <button
                                     onClick={() => handleGrandTest(selectedCourse)}
-                                    className="mt-auto w-full py-3 bg-gold-500 text-black font-bold rounded-xl hover:bg-gold-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.2)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)]"
+                                    className="mt-auto w-full py-3 bg-gold-500 text-black font-bold rounded-xl hover:bg-gold-400 transition-all shadow-[0_0_20px_rgba(234,179,8,0.2)]"
                                 >
                                     Start Grand Test
                                 </button>
                             </div>
                         </div>
 
-                        {/* Individual Topics List */}
                         <div className="md:col-span-2 bg-[#111] rounded-2xl border border-white/5 overflow-hidden flex flex-col">
                             <div className="p-4 bg-white/5 border-b border-white/5 font-bold text-gray-300">Specific Topics</div>
                             <div className="overflow-y-auto max-h-[400px]">
@@ -386,11 +361,8 @@ function TakeTestView({ archives }) {
                                         href={`/study?file=${encodeURIComponent(file.link)}&title=${encodeURIComponent(file.title)}`}
                                         className="flex items-center justify-between p-4 hover:bg-white/5 border-b border-white/5 last:border-0 transition-colors group"
                                     >
-                                        <div>
-                                            <div className="font-bold text-gray-200 group-hover:text-gold-500 transition-colors">{file.title}</div>
-                                            <div className="text-xs text-gray-500">Topic File</div>
-                                        </div>
-                                        <ArrowRightCircle className="text-gray-600 group-hover:text-gold-500 transition-colors" size={20} />
+                                        <div className="font-bold text-gray-200 group-hover:text-gold-500 transition-colors">{file.title}</div>
+                                        <ArrowLeft size={20} className="text-gray-600 group-hover:text-gold-500 transition-colors rotate-180" />
                                     </a>
                                 ))}
                             </div>
@@ -402,24 +374,19 @@ function TakeTestView({ archives }) {
     );
 }
 
-// Helper for icon
-const ArrowRightCircle = ({ size, className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><path d="M12 16l4-4-4-4"></path><path d="M8 12h8"></path></svg>
-);
-
 function UploadView({ file, setFile, metadata, setMetadata, uploading, handleUpload, success, generatedLink }) {
     return (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="max-w-xl mx-auto">
             <div className="bg-[#111] border border-white/5 rounded-2xl p-8">
                 <h3 className="text-2xl font-cinzel font-bold text-white mb-6">Upload Material</h3>
                 <div className="space-y-4 mb-6">
-                    <input type="text" placeholder="Course Code (e.g. POL101)" className="input-field w-full rounded-xl px-4 py-3 bg-black border border-white/10 focus:border-gold-500/50 outline-none text-white" value={metadata.courseCode} onChange={e => setMetadata({ ...metadata, courseCode: e.target.value })} />
-                    <input type="text" placeholder="Topic Number (e.g. 05)" className="input-field w-full rounded-xl px-4 py-3 bg-black border border-white/10 focus:border-gold-500/50 outline-none text-white" value={metadata.topicNumber} onChange={e => setMetadata({ ...metadata, topicNumber: e.target.value })} />
-                    <input type="text" placeholder="Document Title" className="input-field w-full rounded-xl px-4 py-3 bg-black border border-white/10 focus:border-gold-500/50 outline-none text-white" value={metadata.title} onChange={e => setMetadata({ ...metadata, title: e.target.value })} />
+                    <input type="text" placeholder="Course Code" className="input-field w-full rounded-xl px-4 py-3 bg-black border border-white/10 text-white outline-none" value={metadata.courseCode} onChange={e => setMetadata({ ...metadata, courseCode: e.target.value })} />
+                    <input type="text" placeholder="Topic Number" className="input-field w-full rounded-xl px-4 py-3 bg-black border border-white/10 text-white outline-none" value={metadata.topicNumber} onChange={e => setMetadata({ ...metadata, topicNumber: e.target.value })} />
+                    <input type="text" placeholder="Document Title" className="input-field w-full rounded-xl px-4 py-3 bg-black border border-white/10 text-white outline-none" value={metadata.title} onChange={e => setMetadata({ ...metadata, title: e.target.value })} />
                 </div>
 
-                <div className="border-2 border-dashed border-white/10 hover:border-gold-500/30 rounded-xl p-8 text-center mb-6 transition-colors bg-black/50">
-                    <input type="file" onChange={e => setFile(e.target.files[0])} className="block mx-auto text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:bg-gray-800 file:text-white file:border-0 hover:file:bg-gold-600 hover:file:text-black transition-all" />
+                <div className="border-2 border-dashed border-white/10 hover:border-gold-500/30 rounded-xl p-8 text-center mb-6 bg-black/50">
+                    <input type="file" onChange={e => setFile(e.target.files[0])} className="block mx-auto text-sm text-gray-400" />
                 </div>
 
                 <div className="flex justify-end">
@@ -435,8 +402,6 @@ function UploadView({ file, setFile, metadata, setMetadata, uploading, handleUpl
 }
 
 function AdminView({ users, archives, subTab, setSubTab, newUser, setNewUser, fetchUsers, fetchFiles }) {
-    // Reusing logic from previous admin view, simplified for cleaner UI
-    // NOTE: Implementation abbreviated for brevity but retains functionality
     const [editingFile, setEditingFile] = useState(null);
 
     const handleDeleteUser = async (id) => {
@@ -470,41 +435,26 @@ function AdminView({ users, archives, subTab, setSubTab, newUser, setNewUser, fe
     };
 
     const handleUpdateFile = async (file) => {
-        try {
-            const res = await fetch('/api/admin/files/update', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(file)
-            });
-
-            if (res.ok) {
-                setEditingFile(null);
-                fetchFiles();
-                alert('File updated successfully!');
-            } else {
-                alert('Failed to update file');
-            }
-        } catch (error) {
-            console.error('Error updating file:', error);
-            alert('Error updating file');
+        const res = await fetch('/api/admin/files/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(file)
+        });
+        if (res.ok) {
+            setEditingFile(null);
+            fetchFiles();
         }
     };
-
-    // Use 'adminTab' instead of subTab consistent with updated UI
-    const adminTab = subTab;
 
     return (
         <div className="max-w-4xl mx-auto">
             <div className="flex space-x-4 mb-6 border-b border-white/5 pb-1">
-                <button onClick={() => setSubTab('users')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${adminTab === 'users' ? 'border-gold-500 text-gold-500' : 'border-transparent text-gray-500'}`}>Users</button>
-                <button onClick={() => setSubTab('files')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${adminTab === 'files' ? 'border-gold-500 text-gold-500' : 'border-transparent text-gray-500'}`}>Files</button>
+                <button onClick={() => setSubTab('admin-users')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${subTab === 'admin-users' ? 'border-gold-500 text-gold-500' : 'border-transparent text-gray-500'}`}>Users</button>
+                <button onClick={() => setSubTab('admin-files')} className={`px-4 py-2 text-sm font-bold border-b-2 transition-all ${subTab === 'admin-files' ? 'border-gold-500 text-gold-500' : 'border-transparent text-gray-500'}`}>Files</button>
             </div>
 
-            {adminTab === 'users' && (
+            {subTab === 'admin-users' && (
                 <div className="space-y-4">
-                    {/* Users List */}
                     {users.map(u => (
                         <div key={u.id} className="flex justify-between items-center p-4 bg-[#111] rounded-xl border border-white/5">
                             <div>
@@ -514,18 +464,14 @@ function AdminView({ users, archives, subTab, setSubTab, newUser, setNewUser, fe
                                 </div>
                                 <div className="text-gray-500 text-xs">{u.email || u.office}</div>
                             </div>
-
                             <div className="flex items-center space-x-2">
-                                {/* Role Toggle */}
                                 {u.role !== 'admin' ? (
-                                    <button onClick={() => handleRoleUpdate(u.id, 'admin')} className="text-xs font-bold text-green-500 hover:bg-green-500/10 px-2 py-1 rounded transition-colors">Promote</button>
+                                    <button onClick={() => handleRoleUpdate(u.id, 'admin')} className="text-xs font-bold text-green-500 px-2 py-1 rounded">Promote</button>
                                 ) : (
-                                    u.id !== 'admin-001' && <button onClick={() => handleRoleUpdate(u.id, 'user')} className="text-xs font-bold text-yellow-500 hover:bg-yellow-500/10 px-2 py-1 rounded transition-colors">Demote</button>
+                                    u.id !== 'admin-001' && <button onClick={() => handleRoleUpdate(u.id, 'user')} className="text-xs font-bold text-yellow-500 px-2 py-1 rounded">Demote</button>
                                 )}
-
-                                {/* Delete */}
                                 {u.id !== 'admin-001' && (
-                                    <button onClick={() => handleDeleteUser(u.id)} className="text-red-500 hover:bg-red-500/10 p-2 rounded transition-colors"><Trash2 size={16} /></button>
+                                    <button onClick={() => handleDeleteUser(u.id)} className="text-red-500 p-2"><Trash2 size={16} /></button>
                                 )}
                             </div>
                         </div>
@@ -533,35 +479,32 @@ function AdminView({ users, archives, subTab, setSubTab, newUser, setNewUser, fe
                 </div>
             )}
 
-            {adminTab === 'files' && (
+            {subTab === 'admin-files' && (
                 <div className="space-y-2">
-                    {/* File List */}
                     {archives.map(f => (
-                        <div key={f.id} className="flex justify-between items-center p-3 bg-white/5 rounded hover:border-gold-500/30 border border-transparent transition-all">
+                        <div key={f.id} className="flex justify-between items-center p-3 bg-white/5 rounded border border-transparent">
                             <div>
                                 <span className="text-gold-500 font-mono text-xs mr-2">{f.courseCode}</span>
                                 <span className="text-white">{f.title}</span>
                             </div>
                             <div className="flex space-x-2">
-                                <button onClick={() => setEditingFile(f)} className="text-blue-400 hover:text-blue-300 p-1"><RefreshCw size={16} /></button>
-                                <button onClick={() => handleDeleteFile(f)} className="text-red-500 hover:text-red-400 p-1"><Trash2 size={16} /></button>
+                                <button onClick={() => setEditingFile(f)} className="text-blue-400 p-1"><RefreshCw size={16} /></button>
+                                <button onClick={() => handleDeleteFile(f)} className="text-red-500 p-1"><Trash2 size={16} /></button>
                             </div>
                         </div>
                     ))}
-
-                    {/* Edit Modal */}
                     {editingFile && (
                         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 backdrop-blur-sm">
-                            <div className="bg-[#111] p-8 rounded-2xl border border-white/10 w-full max-w-md">
-                                <h3 className="text-xl font-bold text-white mb-4">Edit Metadata</h3>
+                            <div className="bg-[#111] p-8 rounded-2xl border border-white/10 w-full max-w-md text-white">
+                                <h3 className="text-xl font-bold mb-4">Edit Metadata</h3>
                                 <div className="space-y-4 mb-6">
-                                    <input className="input-field w-full rounded p-3 bg-black border border-white/10 text-white" value={editingFile.courseCode} onChange={e => setEditingFile({ ...editingFile, courseCode: e.target.value })} placeholder="Course Code" />
-                                    <input className="input-field w-full rounded p-3 bg-black border border-white/10 text-white" value={editingFile.topicNumber} onChange={e => setEditingFile({ ...editingFile, topicNumber: e.target.value })} placeholder="Topic #" />
-                                    <input className="input-field w-full rounded p-3 bg-black border border-white/10 text-white" value={editingFile.title} onChange={e => setEditingFile({ ...editingFile, title: e.target.value })} placeholder="Title" />
+                                    <input className="input-field w-full rounded p-3 bg-black border border-white/10" value={editingFile.courseCode} onChange={e => setEditingFile({ ...editingFile, courseCode: e.target.value })} />
+                                    <input className="input-field w-full rounded p-3 bg-black border border-white/10" value={editingFile.topicNumber} onChange={e => setEditingFile({ ...editingFile, topicNumber: e.target.value })} />
+                                    <input className="input-field w-full rounded p-3 bg-black border border-white/10" value={editingFile.title} onChange={e => setEditingFile({ ...editingFile, title: e.target.value })} />
                                 </div>
                                 <div className="flex justify-end gap-2">
-                                    <button onClick={() => setEditingFile(null)} className="px-4 py-2 text-gray-400 hover:text-white">Cancel</button>
-                                    <button onClick={() => handleUpdateFile(editingFile)} className="px-4 py-2 bg-blue-600 text-white rounded font-bold hover:bg-blue-500">Save Changes</button>
+                                    <button onClick={() => setEditingFile(null)} className="px-4 py-2">Cancel</button>
+                                    <button onClick={() => handleUpdateFile(editingFile)} className="px-4 py-2 bg-blue-600 rounded font-bold">Save</button>
                                 </div>
                             </div>
                         </div>

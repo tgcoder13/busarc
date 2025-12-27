@@ -5,7 +5,6 @@
 :root {
     --background: #050505;
     --foreground: #ededed;
-    /* Gold-500 as primary reference if needed in CSS variables */
     --primary: #d4af37;
     --card: rgba(18, 18, 20, 0.6);
     --input: rgba(255, 255, 255, 0.03);
@@ -14,7 +13,6 @@
 body {
     color: var(--foreground);
     background-color: var(--background);
-    /* Premium Dark Gradient Background */
     background-image:
         radial-gradient(circle at 15% 50%, rgba(212, 175, 55, 0.08), transparent 25%),
         radial-gradient(circle at 85% 30%, rgba(76, 29, 149, 0.15), transparent 25%);
@@ -25,7 +23,6 @@ body {
     position: relative;
 }
 
-/* Noise Texture Overlay */
 body::before {
     content: "";
     position: fixed;
@@ -38,7 +35,7 @@ body::before {
 
 @layer utilities {
     .glass-panel {
-        @apply bg-[var(--card)] border border-white/5 backdrop-blur-3xl shadow-glass;
+        @apply bg-[var(--card)] border border-white/5 backdrop-blur-3xl shadow-[0_8px_32px_0_rgba(0, 0, 0, 0.8)];
     }
 
     .input-field {
@@ -50,7 +47,7 @@ body::before {
     }
 
     .btn-primary {
-        @apply bg-gradient-to-br from-gold-400 to-gold-600 text-black font-bold uppercase tracking-wider relative overflow-hidden transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-gold;
+        @apply bg-gradient-to-br from-gold-400 to-gold-600 text-black font-bold uppercase tracking-wider relative overflow-hidden transition-all duration-300 transform hover:-translate-y-0.5;
     }
 
     .bg-noise {

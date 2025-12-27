@@ -1,9 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { signIn, getSession } from "next-auth/react";
-import { Lock, User, RefreshCw, Globe, Shield, Mail } from "lucide-react";
+import { signIn } from "next-auth/react";
+import { Lock, User, RefreshCw, Globe } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
