@@ -30,7 +30,7 @@ export default function PrivacyPolicy() {
                             <Eye className="mr-2 text-gold-500" size={18} /> 1. Data Collection
                         </h2>
                         <p>
-                            We collect minimal data necessary to provide our secure file archiving services. This includes your email (via Netlify Identity) and any metadata associated with the files you upload.
+                            We collect minimal data necessary to provide our secure file archiving services. This includes your email (via Auth.js) and any metadata associated with the files you upload.
                         </p>
                     </section>
 

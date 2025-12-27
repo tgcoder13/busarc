@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import {
     Upload, Link as LinkIcon, FileText, Check, LogOut,
     Copy, ExternalLink, Library, FolderOpen, ArrowLeft, ChevronDown, ChevronRight, RefreshCw,
@@ -10,8 +10,8 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
+    const { data: session, status } = useSession();
     const router = useRouter();
-    const [user, setUser] = useState(null);
     const [activeTab, setActiveTab] = useState('home'); // home | library | upload | test | admin
 
     // Data State
@@ -31,11 +31,12 @@ export default function Dashboard() {
     const [adminSubTab, setAdminSubTab] = useState('users');
 
     useEffect(() => {
-        const userData = localStorage.getItem("maverics_user");
-        if (!userData) { router.push("/"); }
-        else { setUser(JSON.parse(userData)); }
-        fetchArchives();
-    }, [router]);
+        if (status === "unauthenticated") {
+            router.push("/");
+        } else if (status === "authenticated") {
+            fetchArchives();
+        }
+    }, [status, router]);
 
     const fetchArchives = async () => {
         try {
@@ -54,12 +55,14 @@ export default function Dashboard() {
     };
 
     const handleLogout = async () => {
-        localStorage.removeItem("maverics_user");
         await signOut({ callbackUrl: "/" });
     };
 
     // --- VIEW LOGIC ---
-    if (!user) return null;
+    if (status === "loading") return <div className="h-screen bg-black flex items-center justify-center text-gold-500">Loading...</div>;
+    if (!session) return null;
+
+    const user = session.user;
 
     return (
         <div className="flex h-screen bg-[#050505] text-white overflow-hidden font-inter">
@@ -159,7 +162,7 @@ function SidebarItem({ id, icon: Icon, label, active, set }) {
 
 function HomeView({ user, archives, setTab }) {
     const getStudyUrl = (file) => {
-        // Use the logical path instead of hardcoded netlify domain
+        // Use the logical path
         return `/study?file=${encodeURIComponent(file.link)}&title=${encodeURIComponent(file.title)}`;
     };
 

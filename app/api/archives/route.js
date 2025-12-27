@@ -1,7 +1,7 @@
 import { getJson } from "@/lib/storage";
 import { NextResponse } from "next/server";
 
-// Force dynamic requirement for Netlify function behavior
+// Force dynamic requirement
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
